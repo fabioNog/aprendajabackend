@@ -8,22 +8,20 @@ import { Contact } from '../modules/contact/entities/contact.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
-        const config = {
+        const isProduction = configService.get('NODE_ENV') === 'production';
+
+        return {
           type: 'postgres' as const,
           host: configService.get('DB_HOST', 'localhost'),
-          port: configService.get('DB_PORT', 5432),
+          port: configService.get<number>('DB_PORT', 5432),
           username: configService.get('DB_USERNAME', 'professor'),
           password: String(configService.get('DB_PASSWORD', 'professor123')),
           database: configService.get('DB_DATABASE', 'professor_db'),
           entities: [Contact],
-          synchronize: true, // 👈 DEVE SER TRUE
-          logging: true, // 👈 Ative para ver o SQL
-          ssl: false,
-          extra: {
-            auth: 'password',
-          },
-        }; // 👈 Debug
-        return config;
+          synchronize: true,
+          logging: !isProduction,
+          ssl: isProduction ? { rejectUnauthorized: false } : false,
+        };
       },
       inject: [ConfigService],
     }),
