@@ -22,12 +22,12 @@ import { Contact } from '../modules/contact/entities/contact.entity';
           extra: {
             auth: 'password',
           },
-        };
-        console.log('🔧 Configuração do banco:', config); // 👈 Debug
+        }; // 👈 Debug
         return config;
       },
       inject: [ConfigService],
     }),
   ],
 })
+
 export class DatabaseModule {}
