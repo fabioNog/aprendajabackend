@@ -29,5 +29,4 @@ import { Contact } from '../modules/contact/entities/contact.entity';
     }),
   ],
 })
-
 export class DatabaseModule {}
