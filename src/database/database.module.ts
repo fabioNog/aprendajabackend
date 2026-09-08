@@ -7,24 +7,23 @@ import { Contact } from '../modules/contact/entities/contact.entity';
   imports: [
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        const config = {
-          type: 'postgres' as const,
-          host: configService.get('DB_HOST', 'localhost'),
-          port: configService.get('DB_PORT', 5432),
-          username: configService.get('DB_USERNAME', 'professor'),
-          password: String(configService.get('DB_PASSWORD', 'professor123')),
-          database: configService.get('DB_DATABASE', 'professor_db'),
-          entities: [Contact],
-          synchronize: true, // 👈 DEVE SER TRUE
-          logging: true, // 👈 Ative para ver o SQL
-          ssl: true,
-          extra: {
-            auth: 'password',
-          },
-        }; // 👈 Debug
-        return config;
-      },
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('DB_HOST', 'localhost'),
+        port: configService.get('DB_PORT', 5432),
+        username: configService.get('DB_USERNAME', 'professor'),
+        password: String(configService.get('DB_PASSWORD', 'professor123')), // Forçar string
+        database: configService.get('DB_DATABASE', 'professor_db'),
+        entities: [Contact],
+        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+        logging: configService.get('NODE_ENV') === 'development',
+        // Configurações extras para evitar problemas de autenticação
+        ssl: true,
+        extra: {
+          // Forçar autenticação com password
+          auth: 'password',
+        },
+      }),
       inject: [ConfigService],
     }),
   ],
