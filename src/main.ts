@@ -16,8 +16,8 @@ async function bootstrap() {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://aprendaja-snowy.vercel.app',
-    'https://aprendaja-snowy.vercel.app/',
+    'https://aprendajaold.vercel.app',
+    'https://aprendajaold.vercel.app/',
     // Se tiver domínio customizado, adicione aqui
     // 'https://seudominio.com',
   ];
