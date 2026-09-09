@@ -16,10 +16,7 @@ async function bootstrap() {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
-    'https://aprendajaold.vercel.app',
-    'https://aprendajaold.vercel.app/',
-    // Se tiver domínio customizado, adicione aqui
-    // 'https://seudominio.com',
+    'https://teconta.vercel.app',
   ];
 
   // CORS
@@ -30,7 +27,7 @@ async function bootstrap() {
         callback(null, true);
         return;
       }
-      
+
       // Verificar se a origem é permitida
       if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
         callback(null, true);
