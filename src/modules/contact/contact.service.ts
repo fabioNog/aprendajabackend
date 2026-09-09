@@ -1,4 +1,7 @@
+// src/modules/contact/contact.service.ts
+
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateContactDto } from './dto/create-contact.dto';
@@ -12,17 +15,67 @@ export class ContactService {
   constructor(
     @InjectRepository(Contact)
     private contactRepository: Repository<Contact>,
+    private configService: ConfigService,
   ) {}
+
+  /**
+   * Valida o token recebido com a API de verificação do Google reCAPTCHA v3
+   */
+  private async verifyRecaptcha(token: string): Promise<boolean> {
+    const secretKey =
+      this.configService.get<string>('RECAPTCHA_SECRET_KEY') ||
+      process.env.RECAPTCHA_SECRET_KEY;
+
+    if (!secretKey) {
+      this.logger.error(
+        '❌ RECAPTCHA_SECRET_KEY não foi configurada nas variáveis de ambiente!'
+      );
+      return false;
+    }
+
+    try {
+      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          secret: secretKey,
+          response: token,
+        }),
+      });
+
+      const data = await response.json();
+
+      // reCAPTCHA v3: verifica sucesso e score (>= 0.5 indica alta probabilidade de ser humano)
+      return data.success && typeof data.score === 'number' && data.score >= 0.5;
+    } catch (error) {
+      this.logger.error(`❌ Erro ao comunicar com API do Google reCAPTCHA: ${error.message}`);
+      return false;
+    }
+  }
 
   async create(createContactDto: CreateContactDto): Promise<ApiResponse> {
     try {
+      const { recaptchaToken, ...contactData } = createContactDto;
+
+      // 1. Validação do reCAPTCHA
+      const isHuman = await this.verifyRecaptcha(recaptchaToken);
+      if (!isHuman) {
+        this.logger.warn(
+          `⚠️ Envio de formulário bloqueado pelo reCAPTCHA: ${contactData.name} - ${contactData.email}`
+        );
+        return ApiResponse.error(
+          'Falha na verificação de segurança. Tente novamente.',
+          ['Atividade suspeita detectada ou token reCAPTCHA inválido.']
+        );
+      }
+
       this.logger.log(
-        `📩 Nova mensagem de contato: ${createContactDto.name} - ${createContactDto.email}`
+        `📩 Nova mensagem de contato: ${contactData.name} - ${contactData.email}`
       );
 
-      // Salvar no banco de dados
+      // 2. Salvar no banco de dados (sem o campo recaptchaToken)
       const contact = this.contactRepository.create({
-        ...createContactDto,
+        ...contactData,
         metadata: {
           source: 'website',
           userAgent: 'N/A', // Será preenchido depois com o user agent real

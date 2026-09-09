@@ -10,7 +10,6 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const port = configService.get('port') || 3001;
-  const frontendUrl = configService.get('frontendUrl');
 
   // Lista de origens permitidas
   const allowedOrigins = [

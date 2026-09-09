@@ -1,3 +1,5 @@
+// src/modules/contact/dto/create-contact.dto.ts
+
 import { ApiProperty } from '@nestjs/swagger';
 import { 
   IsEmail, 
@@ -5,7 +7,8 @@ import {
   IsOptional, 
   MinLength, 
   MaxLength,
-  IsIn 
+  IsIn,
+  IsNotEmpty 
 } from 'class-validator';
 
 export class CreateContactDto {
@@ -65,4 +68,12 @@ export class CreateContactDto {
   @MinLength(10, { message: 'Mensagem deve ter pelo menos 10 caracteres' })
   @MaxLength(500, { message: 'Mensagem deve ter no máximo 500 caracteres' })
   message: string;
+
+  @ApiProperty({
+    description: 'Token gerado pelo reCAPTCHA v3 no frontend',
+    example: '03AFcWeA7...',
+  })
+  @IsString({ message: 'Token reCAPTCHA deve ser uma string' })
+  @IsNotEmpty({ message: 'Token reCAPTCHA é obrigatório' })
+  recaptchaToken: string;
 }
