@@ -7,23 +7,36 @@ import { Contact } from '../modules/contact/entities/contact.entity';
   imports: [
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 5432),
-        username: configService.get('DB_USERNAME', 'professor'),
-        password: String(configService.get('DB_PASSWORD', 'professor123')), // Forçar string
-        database: configService.get('DB_DATABASE', 'professor_db'),
-        entities: [Contact],
-        synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
-        logging: configService.get('NODE_ENV') === 'development',
-        // Configurações extras para evitar problemas de autenticação
-        ssl: true,
-        extra: {
-          // Forçar autenticação com password
-          auth: 'password',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProduction = configService.get('NODE_ENV') === 'production';
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+
+        // Se existir DATABASE_URL (injetada no Render), conecta direto via URL
+        if (databaseUrl) {
+          return {
+            type: 'postgres',
+            url: databaseUrl,
+            entities: [Contact],
+            synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+            logging: !isProduction,
+            ssl: isProduction ? { rejectUnauthorized: false } : false,
+          };
+        }
+
+        // Caso contrário, usa as variáveis individuais (desenvolvimento local)
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DB_HOST', 'localhost'),
+          port: Number(configService.get('DB_PORT', 5432)),
+          username: configService.get<string>('DB_USERNAME', 'professor'),
+          password: String(configService.get('DB_PASSWORD', 'professor123')),
+          database: configService.get<string>('DB_DATABASE', 'professor_db'),
+          entities: [Contact],
+          synchronize: configService.get('DB_SYNCHRONIZE') === 'true',
+          logging: !isProduction,
+          ssl: isProduction ? { rejectUnauthorized: false } : false,
+        };
+      },
       inject: [ConfigService],
     }),
   ],
