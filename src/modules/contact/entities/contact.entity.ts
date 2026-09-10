@@ -1,10 +1,10 @@
-import { 
-  Entity, 
-  Column, 
-  PrimaryGeneratedColumn, 
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
-  Index 
+  Index,
 } from 'typeorm';
 
 @Entity('contacts')

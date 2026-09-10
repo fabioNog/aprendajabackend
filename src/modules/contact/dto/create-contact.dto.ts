@@ -1,14 +1,14 @@
 // src/modules/contact/dto/create-contact.dto.ts
 
 import { ApiProperty } from '@nestjs/swagger';
-import { 
-  IsEmail, 
-  IsString, 
-  IsOptional, 
-  MinLength, 
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  MinLength,
   MaxLength,
   IsIn,
-  IsNotEmpty 
+  IsNotEmpty,
 } from 'class-validator';
 
 export class CreateContactDto {
@@ -46,18 +46,21 @@ export class CreateContactDto {
       'Programação',
       'Desenvolvimento Web',
       'Banco de Dados',
-      'Outro'
-    ]
+      'Outro',
+    ],
   })
   @IsString({ message: 'Área de interesse deve ser uma string' })
-  @IsIn([
-    'Tecnologia para terceira idade',
-    'Matemática',
-    'Programação',
-    'Desenvolvimento Web',
-    'Banco de Dados',
-    'Outro'
-  ], { message: 'Área de interesse inválida' })
+  @IsIn(
+    [
+      'Tecnologia para terceira idade',
+      'Matemática',
+      'Programação',
+      'Desenvolvimento Web',
+      'Banco de Dados',
+      'Outro',
+    ],
+    { message: 'Área de interesse inválida' },
+  )
   interestArea: string;
 
   @ApiProperty({

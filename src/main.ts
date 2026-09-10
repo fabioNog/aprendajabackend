@@ -28,7 +28,10 @@ async function bootstrap() {
       }
 
       // Verificar se a origem é permitida
-      if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      if (
+        allowedOrigins.includes(origin) ||
+        process.env.NODE_ENV === 'development'
+      ) {
         callback(null, true);
       } else {
         logger.warn(`❌ CORS bloqueado para: ${origin}`);
@@ -55,7 +58,8 @@ async function bootstrap() {
   // Swagger Documentation
   const config = new DocumentBuilder()
     .setTitle('Professor API')
-    .setDescription(`
+    .setDescription(
+      `
       API para o site do professor de Matemática e Tecnologia.
       
       ## Endpoints disponíveis:
@@ -65,7 +69,8 @@ async function bootstrap() {
       ## Como usar:
       1. Use o endpoint /api/contact para enviar mensagens
       2. Consulte a documentação interativa abaixo
-    `)
+    `,
+    )
     .setVersion('1.0')
     .addTag('Contato', '📩 Endpoint para envio de mensagens de contato')
     .addTag('Saúde', '🏥 Endpoint para verificar status da API')

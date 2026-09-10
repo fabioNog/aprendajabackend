@@ -28,27 +28,39 @@ export class ContactService {
 
     if (!secretKey) {
       this.logger.error(
-        '❌ RECAPTCHA_SECRET_KEY não foi configurada nas variáveis de ambiente!'
+        '❌ RECAPTCHA_SECRET_KEY não foi configurada nas variáveis de ambiente!',
       );
       return false;
     }
 
     try {
-      const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          secret: secretKey,
-          response: token,
-        }),
-      });
+      const response = await fetch(
+        'https://www.google.com/recaptcha/api/siteverify',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            secret: secretKey,
+            response: token,
+          }),
+        },
+      );
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        success: boolean;
+        score?: number;
+      };
 
       // reCAPTCHA v3: verifica sucesso e score (>= 0.5 indica alta probabilidade de ser humano)
-      return data.success && typeof data.score === 'number' && data.score >= 0.5;
+      return (
+        data.success && typeof data.score === 'number' && data.score >= 0.5
+      );
     } catch (error) {
-      this.logger.error(`❌ Erro ao comunicar com API do Google reCAPTCHA: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido';
+      this.logger.error(
+        `❌ Erro ao comunicar com API do Google reCAPTCHA: ${errorMessage}`,
+      );
       return false;
     }
   }
@@ -61,16 +73,16 @@ export class ContactService {
       const isHuman = await this.verifyRecaptcha(recaptchaToken);
       if (!isHuman) {
         this.logger.warn(
-          `⚠️ Envio de formulário bloqueado pelo reCAPTCHA: ${contactData.name} - ${contactData.email}`
+          `⚠️ Envio de formulário bloqueado pelo reCAPTCHA: ${contactData.name} - ${contactData.email}`,
         );
         return ApiResponse.error(
           'Falha na verificação de segurança. Tente novamente.',
-          ['Atividade suspeita detectada ou token reCAPTCHA inválido.']
+          ['Atividade suspeita detectada ou token reCAPTCHA inválido.'],
         );
       }
 
       this.logger.log(
-        `📩 Nova mensagem de contato: ${contactData.name} - ${contactData.email}`
+        `📩 Nova mensagem de contato: ${contactData.name} - ${contactData.email}`,
       );
 
       // 2. Salvar no banco de dados (sem o campo recaptchaToken)
@@ -95,13 +107,15 @@ export class ContactService {
           name: savedContact.name,
           email: savedContact.email,
           interestArea: savedContact.interestArea,
-        }
+        },
       );
     } catch (error) {
-      this.logger.error(`❌ Erro ao processar contato: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Erro desconhecido ao salvar';
+      this.logger.error(`❌ Erro ao processar contato: ${errorMessage}`);
       return ApiResponse.error(
         'Erro ao processar sua mensagem. Tente novamente mais tarde.',
-        [error.message]
+        [errorMessage],
       );
     }
   }
