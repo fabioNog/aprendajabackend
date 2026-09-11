@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { Contact } from './entities/contact.entity';
 import { ApiResponse } from '../../common/dto/response.dto';
+import { EmailService } from './email.service';
 
 @Injectable()
 export class ContactService {
@@ -16,6 +17,7 @@ export class ContactService {
     @InjectRepository(Contact)
     private contactRepository: Repository<Contact>,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   /**
@@ -98,7 +100,15 @@ export class ContactService {
 
       this.logger.log(`✅ Contato salvo com ID: ${savedContact.id}`);
 
-      // TODO: Implementar envio de e-mail
+      await this.emailService.sendContactEmails({
+        name: savedContact.name,
+        email: savedContact.email,
+        whatsapp: savedContact.whatsapp,
+        interestArea: savedContact.interestArea,
+        message: savedContact.message,
+      });
+
+      this.logger.log(`📧 E-mails enviados para o contato ${savedContact.id}`);
 
       return ApiResponse.success(
         '✅ Mensagem recebida com sucesso! Em breve entraremos em contato.',
