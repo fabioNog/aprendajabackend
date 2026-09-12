@@ -8,7 +8,7 @@ import { EmailService } from './email.service';
 @Module({
   imports: [TypeOrmModule.forFeature([Contact])],
   controllers: [ContactController],
-  providers: [ContactService, EmailService],
+  providers: [ContactService, EmailService], // 👈 EmailService continua aqui
   exports: [ContactService],
 })
 export class ContactModule {}

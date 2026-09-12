@@ -1,47 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as nodemailer from 'nodemailer';
-import dns from 'node:dns';
-
-// Prioriza IPv4 para evitar problemas de conectividade IPv6
-// em ambientes como o Render.
-dns.setDefaultResultOrder('ipv4first');
+import { InjectResend } from 'nest-resend';
+import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
-  private readonly transporter: nodemailer.Transporter;
-
-  constructor(private readonly configService: ConfigService) {
-    const gmailUser = this.configService.get<string>('GMAIL_USER');
-
-    const gmailPassword = this.configService.get<string>('GMAIL_APP_PASSWORD');
-
-    if (!gmailUser) {
-      throw new Error(
-        'GMAIL_USER não foi configurado nas variáveis de ambiente.',
-      );
-    }
-
-    if (!gmailPassword) {
-      throw new Error(
-        'GMAIL_APP_PASSWORD não foi configurado nas variáveis de ambiente.',
-      );
-    }
-
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true,
-
-      auth: {
-        user: gmailUser,
-        pass: gmailPassword,
-      },
-    });
-
-    this.logger.log('📧 Serviço de e-mail SMTP configurado');
+  constructor(@InjectResend() private readonly resendClient: Resend) {
+    this.logger.log('📧 Serviço de e-mail Resend configurado');
   }
 
   /**
@@ -55,11 +21,12 @@ export class EmailService {
     interestArea: string;
     message: string;
   }): Promise<void> {
-    const gmailUser = this.configService.get<string>('GMAIL_USER');
+    // ⚠️ IMPORTANTE: Enquanto você não verificar um domínio no Resend,
+    // use este endereço de teste. Depois, troque pelo seu domínio.
+    const fromEmail = 'TeConta <onboarding@resend.dev>';
 
-    if (!gmailUser) {
-      throw new Error('GMAIL_USER não configurado.');
-    }
+    // Para onde enviar a notificação de admin (você pode usar seu e-mail pessoal)
+    const adminEmail = 'seu-email-pessoal@gmail.com';
 
     try {
       this.logger.log(`📤 Enviando e-mail de confirmação para: ${data.email}`);
@@ -68,11 +35,10 @@ export class EmailService {
       // 1. E-MAIL PARA A PESSOA QUE ENVIOU O FORMULÁRIO
       // ============================================================
 
-      await this.transporter.sendMail({
-        from: `"TeConta" <${gmailUser}>`,
-        to: data.email,
+      const { error: confirmationError } = await this.resendClient.emails.send({
+        from: fromEmail,
+        to: 'fabionogdev@gmail.com',
         subject: 'Recebemos sua mensagem - TeConta',
-
         html: `
           <!DOCTYPE html>
           <html lang="pt-BR">
@@ -179,21 +145,23 @@ export class EmailService {
         `,
       });
 
+      if (confirmationError) {
+        throw new Error(`Resend (confirmação): ${confirmationError.message}`);
+      }
+
       this.logger.log(`✅ E-mail de confirmação enviado para: ${data.email}`);
 
       // ============================================================
       // 2. E-MAIL PARA O ADMINISTRADOR
       // ============================================================
 
-      this.logger.log(`📤 Enviando notificação para: ${gmailUser}`);
+      this.logger.log(`📤 Enviando notificação para: fabionogdev@gmail.com`);
 
-      await this.transporter.sendMail({
-        from: `"TeConta" <${gmailUser}>`,
-        to: gmailUser,
+      const { error: adminError } = await this.resendClient.emails.send({
+        from: fromEmail,
+        to: 'fabionogdev@gmail.com',
         replyTo: data.email,
-
         subject: `Novo contato - ${data.name}`,
-
         html: `
           <!DOCTYPE html>
           <html lang="pt-BR">
@@ -295,6 +263,10 @@ export class EmailService {
           </html>
         `,
       });
+
+      if (adminError) {
+        throw new Error(`Resend (admin): ${adminError.message}`);
+      }
 
       this.logger.log('✅ Notificação de novo contato enviada com sucesso');
     } catch (error) {
